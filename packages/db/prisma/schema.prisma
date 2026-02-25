@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  userId       String        @id @default(uuid())
+  firstName    String
+  lastName     String
+  email        String        @unique
+  password     String
+  phoneNumber  String        @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  targets      Target[]
+  personalInfo PersonalInfo?
+  workout      Workout[]
+
+  @@index([createdAt], name: "user_created_at_idx")
+}
+
+model PersonalInfo {
+  personalInfoId     String   @id @default(uuid())
+  userId             String   @unique
+  height             Int
+  weight             Int
+  gender             Gender
+  avgWorkoutMinutes  Int
+  workoutDaysPerWeek Int
+  birthDate          DateTime
+  user               User     @relation(fields: [userId], references: [userId])
+
+  @@index([userId], name: "personal_info_user_id_idx")
+}
+
+model Target {
+  targetId       String        @id @default(uuid())
+  currentWeight  Int
+  goalWeight     Int
+  targetDuration String
+  activityLevel  ActivityLevel
+  bodyGoals      BodyGoals
+  startDate      DateTime      @default(now())
+  endDate        DateTime      @default(now())
+  userId         String
+  user           User          @relation(fields: [userId], references: [userId])
+
+  @@index([userId], name: "target_user_id_idx")
+}
+
+model Machines {
+  machineId String @id @default(uuid())
+  name      String
+}
+
+model Workout {
+  workoutId String      @id @default(uuid())
+  createdAt DateTime    @default(now())
+  chest     Chest[]
+  shoulders Shoulders[]
+  back      Back[]
+  arms      Arms[]
+  legs      Legs[]
+  core      Core[]
+  cardio    Cardio[]
+  userId    String
+  user      User        @relation(fields: [userId], references: [userId])
+
+  @@index([createdAt], name: "workout_created_at_idx")
+  @@index([userId], name: "workout_user_id_idx")
+}
+
+model Chest {
+  chestId   String  @id @default(uuid())
+  name      String
+  reps      Int
+  sets      Int
+  workoutId String
+  workout   Workout @relation(fields: [workoutId], references: [workoutId])
+
+  @@index([workoutId], name: "chest_workout_id_idx")
+}
+
+model Shoulders {
+  shouldersId String  @id @default(uuid())
+  name        String
+  reps        Int
+  sets        Int
+  workoutId   String
+  workout     Workout @relation(fields: [workoutId], references: [workoutId])
+
+  @@index([workoutId], name: "shoulders_workout_id_idx")
+}
+
+model Back {
+  backId    String  @id @default(uuid())
+  name      String
+  reps      Int
+  sets      Int
+  workoutId String
+  workout   Workout @relation(fields: [workoutId], references: [workoutId])
+
+  @@index([workoutId], name: "back_workout_id_idx")
+}
+
+model Arms {
+  armsId    String     @id @default(uuid())
+  name      String
+  reps      Int
+  sets      Int
+  workoutId String
+  workout   Workout    @relation(fields: [workoutId], references: [workoutId])
+  biceps    Biceps[]
+  triceps   Triceps[]
+  forearms  Forearms[]
+
+  @@index([workoutId], name: "arms_workout_id_idx")
+}
+
+model Legs {
+  legsId     String       @id @default(uuid())
+  name       String
+  reps       Int
+  sets       Int
+  workoutId  String
+  workout    Workout      @relation(fields: [workoutId], references: [workoutId])
+  quads      Quads[]
+  hamstrings Hamstrings[]
+  calves     Calves[]
+
+  @@index([workoutId], name: "legs_workout_id_idx")
+}
+
+model Core {
+  coreId    String  @id @default(uuid())
+  name      String
+  reps      Int
+  sets      Int
+  workoutId String
+  workout   Workout @relation(fields: [workoutId], references: [workoutId])
+
+  @@index([workoutId], name: "core_workout_id_idx")
+}
+
+model Cardio {
+  cardioId  String  @id @default(uuid())
+  name      String
+  reps      Int
+  sets      Int
+  workoutId String
+  workout   Workout @relation(fields: [workoutId], references: [workoutId])
+
+  @@index([workoutId], name: "cardio_workout_id_idx")
+}
+
+model Biceps {
+  bicepsId String @id @default(uuid())
+  name     String
+  reps     Int
+  sets     Int
+  armsId   String
+  arms     Arms   @relation(fields: [armsId], references: [armsId])
+
+  @@index([armsId], name: "biceps_arms_id_idx")
+}
+
+model Triceps {
+  tricepsId String @id @default(uuid())
+  name      String
+  reps      Int
+  sets      Int
+  armsId    String
+  arms      Arms   @relation(fields: [armsId], references: [armsId])
+
+  @@index([armsId], name: "triceps_arms_id_idx")
+}
+
+model Forearms {
+  forearmsId String @id @default(uuid())
+  name       String
+  reps       Int
+  sets       Int
+  armsId     String
+  arms       Arms   @relation(fields: [armsId], references: [armsId])
+
+  @@index([armsId], name: "forearms_arms_id_idx")
+}
+
+model Quads {
+  quadsId String @id @default(uuid())
+  name    String
+  reps    Int
+  sets    Int
+  legsId  String
+  legs    Legs   @relation(fields: [legsId], references: [legsId])
+
+  @@index([legsId], name: "quads_legs_id_idx")
+}
+
+model Hamstrings {
+  hamstringsId String @id @default(uuid())
+  name         String
+  reps         Int
+  sets         Int
+  legsId       String
+  legs         Legs   @relation(fields: [legsId], references: [legsId])
+
+  @@index([legsId], name: "hamstrings_legs_id_idx")
+}
+
+model Calves {
+  calvesId String @id @default(uuid())
+  name     String
+  reps     Int
+  sets     Int
+  legsId   String
+  legs     Legs   @relation(fields: [legsId], references: [legsId])
+
+  @@index([legsId], name: "calves_legs_id_idx")
+}
+
+enum BodyGoals {
+  WEIGHT_LOSS
+  WEIGHT_GAIN
+  MASS_GAIN
+  LEAN_MUSCLE_GAIN
+  STRENGTH_GAIN
+  ENDURANCE_GAIN
+  BALANCED_GAIN
+}
+
+enum ActivityLevel {
+  Beginner
+  Intermediate
+  Advanced
+  Expert
+}
+
+enum Gender {
+  Male
+  Female
+  NonBinary
+  PreferNotToSay
+}

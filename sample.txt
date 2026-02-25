@@ -1,0 +1,31 @@
+One Smart Optimization (Optional but Powerful)
+
+If you frequently fetch:
+
+Full workout with all nested exercises
+
+You should always query like:
+
+include: {
+  chest: true,
+  shoulders: true,
+  back: true,
+  arms: {
+    include: {
+      biceps: true,
+      triceps: true,
+      forearms: true
+    }
+  },
+  legs: {
+    include: {
+      quads: true,
+      hamstrings: true,
+      calves: true
+    }
+  },
+  core: true,
+  cardio: true
+}
+
+With proper indexing (which you now have), this will perform well.
