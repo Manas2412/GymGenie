@@ -2,7 +2,7 @@ import { Router } from "express";
 import { prisma } from "db/index";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { AuthInput } from "../../types";
+import { AuthInput, SigninInput } from "../../types";
 
 const userRouter = Router();
 
@@ -60,7 +60,7 @@ userRouter.post("/signup", async (req, res) => {
 });
 
 userRouter.post("/signin", async (req, res) => {
-  const parsed = AuthInput.safeParse(req.body);
+  const parsed = SigninInput.safeParse(req.body);
 
   if (!parsed.success) {
     res.status(400).json({
@@ -113,6 +113,7 @@ userRouter.post("/signin", async (req, res) => {
         email: existingUser.email,
         firstName: existingUser.firstName
       });
+      console.log(token)
   } catch (error) {
     console.error("Error during sign-in:", error);
     res.status(500).json({ message: "Internal server error" });

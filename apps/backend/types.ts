@@ -9,3 +9,8 @@ export const AuthInput = z.object({
   password: z.string().min(1)
 });
 
+export const SigninInput = AuthInput.pick({
+  email: true,
+  password: true,
+});
+

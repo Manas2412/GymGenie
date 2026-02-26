@@ -9,6 +9,11 @@
   "peerDependencies": {
     "typescript": "^5"
   },
+  "scripts": {
+    "dev": "bun index.ts",
+    "start": "bun index.ts",
+    "seed": "bun run scripts/seed-test-user.ts"
+  },
   "dependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
