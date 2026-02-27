@@ -19,6 +19,7 @@ model User {
   targets      Target[]
   personalInfo PersonalInfo?
   workout      Workout[]
+  machines     Machines[]
 
   @@index([createdAt], name: "user_created_at_idx")
 }
@@ -27,7 +28,7 @@ model PersonalInfo {
   personalInfoId     String   @id @default(uuid())
   userId             String   @unique
   height             Int
-  weight             Int
+  currentWeight      Int
   gender             Gender
   avgWorkoutMinutes  Int
   workoutDaysPerWeek Int
@@ -39,7 +40,6 @@ model PersonalInfo {
 
 model Target {
   targetId       String        @id @default(uuid())
-  currentWeight  Int
   goalWeight     Int
   targetDuration String
   activityLevel  ActivityLevel
@@ -55,6 +55,10 @@ model Target {
 model Machines {
   machineId String @id @default(uuid())
   name      String
+  userId    String
+  user      User   @relation(fields: [userId], references: [userId])
+
+  @@index([userId], name: "machines_user_id_idx")
 }
 
 model Workout {
