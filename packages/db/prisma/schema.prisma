@@ -78,6 +78,7 @@ model Workout {
   @@index([userId], name: "workout_user_id_idx")
 }
 
+
 model Chest {
   chestId   String  @id @default(uuid())
   name      String

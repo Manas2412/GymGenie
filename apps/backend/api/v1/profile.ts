@@ -6,7 +6,7 @@ import authMiddleware from "./middleware";
 
 const userProfileRouter = Router();
 
-userProfileRouter.get("/profile", authMiddleware, async (req, res) => {
+userProfileRouter.get("/get-profile", authMiddleware, async (req, res) => {
     const userId = req.userId;
     if (!userId) {
         res.status(401).json({ message: "unauthorized" })
@@ -54,14 +54,18 @@ userProfileRouter.get("/profile", authMiddleware, async (req, res) => {
             phoneNumber: user.phoneNumber,
             personalInfo: withRelations.personalInfo,
             targets: withRelations.targets,
+            success: true,
         });
     } catch (err) {
         console.log(err);
-        res.status(500).json({ message: "Internal Server Error in fetching user profile" })
+        res.status(500).json({ 
+            message: "Internal Server Error in fetching user profile" ,
+            success: false,
+        });
     }
 });
 
-userProfileRouter.patch("/profile", authMiddleware, async (req, res) => {
+userProfileRouter.patch("/update- profile", authMiddleware, async (req, res) => {
     const userId = req.userId;
     if (!userId) {
         res.status(401).json({ message: "Unauthorized" });
@@ -147,10 +151,16 @@ userProfileRouter.patch("/profile", authMiddleware, async (req, res) => {
             }
         });
 
-        res.status(200).json({ message: "Profile updated" });
+        res.status(200).json({ 
+            message: "Profile updated",
+            success: true,
+        });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "Internal server error in updating the user profile" });
+        res.status(500).json({ 
+            message: "Internal server error in updating the user profile" ,
+            success: false,
+        });
     }
 });
 

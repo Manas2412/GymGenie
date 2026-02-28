@@ -48,10 +48,10 @@ userRouter.post("/signup", async (req, res) => {
     });
 
 
-    res.status(201).json({
+    return res.status(201).json({
       userId: user.userId,
       email: user.email,
-      firstName: user.firstName
+      firstName: user.firstName,
     });
   } catch (error) {
     console.error("Error during sign-up:", error);
@@ -99,7 +99,7 @@ userRouter.post("/signin", async (req, res) => {
     );
 
     const cookieMaxAge = 7 * 24 * 60 * 60; // 7 days in seconds
-    res
+    return res
       .cookie("token", token, {
         httpOnly: true,
         sameSite: "lax",
@@ -111,9 +111,8 @@ userRouter.post("/signin", async (req, res) => {
         jwt: token,
         userId: existingUser.userId,
         email: existingUser.email,
-        firstName: existingUser.firstName
+        firstName: existingUser.firstName,
       });
-      console.log(token)
   } catch (error) {
     console.error("Error during sign-in:", error);
     res.status(500).json({ message: "Internal server error" });
