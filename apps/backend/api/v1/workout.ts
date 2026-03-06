@@ -2,6 +2,15 @@ import { Router } from "express";
 import { prisma } from "db/index";
 import authMiddleware from "./middleware";
 import { UpdateWorkoutInput } from "../../types";
+import OpenAI from "openai";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+if (!OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY not present, Check .env file.")
+}
+const client = new OpenAI({
+    apiKey: OPENAI_API_KEY,
+});
 
 const workoutRouter = Router();
 
@@ -259,7 +268,20 @@ workoutRouter.post("/generate-workout", authMiddleware, async (req, res) => {
     }
 
     try {
+        const stream = await client.responses.create({
+            model: "gpt-5",
+            input: [
+                {
+                    role: "user",
+                    content: "Say 'double bubble bath' ten times fast.",
+                },
+            ],
+            stream: true,
+        });
 
+        for await (const event of stream) {
+            console.log(event);
+        }
     } catch (err) {
 
     }
