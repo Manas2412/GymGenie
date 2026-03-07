@@ -65,7 +65,7 @@ userProfileRouter.get("/get-profile", authMiddleware, async (req, res) => {
     }
 });
 
-userProfileRouter.patch("/update- profile", authMiddleware, async (req, res) => {
+userProfileRouter.patch("/update-profile", authMiddleware, async (req, res) => {
     const userId = req.userId;
     if (!userId) {
         res.status(401).json({ message: "Unauthorized" });

@@ -1,9 +1,12 @@
 import React from 'react'
+import Workout from './workout/page'
 
 const Dashboard = () => {
   return (
-    <div>page</div>
+    <div>
+      <h1>Dashboard</h1>
+    </div>
   )
 }
 
-export default Dashboard
+export default Dashboard;

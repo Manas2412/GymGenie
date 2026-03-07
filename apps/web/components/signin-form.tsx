@@ -32,103 +32,107 @@ export function SigninForm({
             const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user/signin`, data)
             return response.data
         },
-        onSuccess: () => {
-            router.push("/dashboard")
-        }
+        
+        onSuccess: (data) => {
+            if (data.jwt) {
+                localStorage.setItem("token", data.jwt);
+            }
+        router.push("/dashboard")
+    }
     })
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData(prev => ({
-            ...prev,
-            [e.target.id]: e.target.value
-        }))
-    }
+const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+        ...prev,
+        [e.target.id]: e.target.value
+    }))
+}
 
-    const handlesignin = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setValidationError(null)       
+const handlesignin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setValidationError(null)
 
-        signinMutation.mutate({
-            email: formData.email,
-            password: formData.password
-        })
-    }
+    signinMutation.mutate({
+        email: formData.email,
+        password: formData.password
+    })
+}
 
-    const error = validationError || (signinMutation.error as any)?.response?.data?.message || signinMutation.error?.message
+const error = validationError || (signinMutation.error as any)?.response?.data?.message || signinMutation.error?.message
 
-    return (
-        <div className={cn("flex flex-col gap-6", className)} {...props}>
-            <Card className="overflow-hidden p-0 shadow-xl border-none ring-1 ring-border/50 bg-white text-black">
-                <CardContent className="grid p-0 md:grid-cols-2">
-                    <form onSubmit={handlesignin} className="p-6 md:p-8">
-                        <FieldGroup>
-                            <div className="flex flex-col items-center gap-2 text-center mb-4">
-                                <h1 className="text-3xl font-bold tracking-tight">Create your account</h1>
-                                <p className="text-sm text-balance text-muted-foreground">
-                                    Enter your details below to join GymGenie
-                                </p>
-                            </div>
+return (
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <Card className="overflow-hidden p-0 shadow-xl border-none ring-1 ring-border/50 bg-white text-black">
+            <CardContent className="grid p-0 md:grid-cols-2">
+                <form onSubmit={handlesignin} className="p-6 md:p-8">
+                    <FieldGroup>
+                        <div className="flex flex-col items-center gap-2 text-center mb-4">
+                            <h1 className="text-3xl font-bold tracking-tight">Create your account</h1>
+                            <p className="text-sm text-balance text-muted-foreground">
+                                Enter your details below to join GymGenie
+                            </p>
+                        </div>
 
+                        <Field>
+                            <FieldLabel htmlFor="email">Email</FieldLabel>
+                            <Input
+                                id="email"
+                                type="email"
+                                placeholder="m@example.com"
+                                value={formData.email}
+                                onChange={handleChange}
+                                required
+                            />
+                        </Field>
+
+                        <div className="grid grid-cols-1 gap-4">
                             <Field>
-                                <FieldLabel htmlFor="email">Email</FieldLabel>
+                                <FieldLabel htmlFor="password">Password</FieldLabel>
                                 <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="m@example.com"
-                                    value={formData.email}
+                                    id="password"
+                                    type="password"
+                                    value={formData.password}
                                     onChange={handleChange}
                                     required
                                 />
                             </Field>
+                        </div>
+                        <FieldDescription className="-mt-3">
+                            Must be at least 8 characters long.
+                        </FieldDescription>
 
-                            <div className="grid grid-cols-1 gap-4">
-                                <Field>
-                                    <FieldLabel htmlFor="password">Password</FieldLabel>
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </Field>
+                        {error && (
+                            <div className="text-sm font-medium text-destructive px-1">
+                                {error}
                             </div>
-                            <FieldDescription className="-mt-3">
-                                Must be at least 8 characters long.
-                            </FieldDescription>
+                        )}
 
-                            {error && (
-                                <div className="text-sm font-medium text-destructive px-1">
-                                    {error}
-                                </div>
-                            )}
+                        <Field>
+                            <Button disabled={signinMutation.isPending} type="submit" className="w-full h-11 text-base font-semibold text-white bg-blue-700 transition-all hover:scale-[1.01] hover:shadow-[0_8px_20px_rgba(0,0,0,0.3)] border border-black">
+                                {signinMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Login
+                            </Button>
+                        </Field>
 
-                            <Field>
-                                <Button disabled={signinMutation.isPending} type="submit" className="w-full h-11 text-base font-semibold transition-all hover:scale-[1.01]">
-                                    {signinMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Login
-                                </Button>
-                            </Field>
-
-                            <FieldDescription className="text-center mt-2">
-                                Already have an account? <a href="/signin" className="underline underline-offset-4 hover:text-primary transition-colors">Sign in</a>
-                            </FieldDescription>
-                        </FieldGroup>
-                    </form>
-                    <div className="relative hidden bg-muted md:block overflow-hidden">
-                        <img
-                            src="/auth-side.jpg"
-                            alt="Gym Interior"
-                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 hover:scale-105 dark:brightness-[0.4] brightness-[0.9]"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
-                    </div>
-                </CardContent>
-            </Card>
-            {/* <FieldDescription className="px-6 text-center text-xs opacity-70 text-zinc-400">
+                        <FieldDescription className="text-center mt-2">
+                            Don't an account? <a href="/signup" className="underline underline-offset-4 hover:text-primary transition-colors">Sign up</a>
+                        </FieldDescription>
+                    </FieldGroup>
+                </form>
+                <div className="relative hidden bg-muted md:block overflow-hidden">
+                    <img
+                        src="/auth-side.jpg"
+                        alt="Gym Interior"
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 hover:scale-105 dark:brightness-[0.4] brightness-[0.9]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
+                </div>
+            </CardContent>
+        </Card>
+        {/* <FieldDescription className="px-6 text-center text-xs opacity-70 text-zinc-400">
                 By clicking continue, you agree to our <a href="#" className="underline hover:text-primary transition-colors">Terms of Service</a>{" "}
                 and <a href="#" className="underline hover:text-primary transition-colors">Privacy Policy</a>.
             </FieldDescription> */}
-        </div>
-    )
+    </div>
+)
 }

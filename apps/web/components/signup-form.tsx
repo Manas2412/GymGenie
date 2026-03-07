@@ -163,7 +163,7 @@ export function SignupForm({
                             )}
 
                             <Field>
-                                <Button disabled={signupMutation.isPending} type="submit" className="w-full h-11 text-base font-semibold transition-all hover:scale-[1.01]">
+                                <Button disabled={signupMutation.isPending} type="submit" className="w-full h-11 text-base font-semibold text-white bg-blue-700 transition-all hover:scale-[1.01] hover:shadow-[0_8px_20px_rgba(0,0,0,0.3)] border border-black">
                                     {signupMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Create Account
                                 </Button>
