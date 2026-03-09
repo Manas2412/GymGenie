@@ -1,9 +1,18 @@
 "use client"
 
 import * as React from "react"
+
 import { useForm } from "@tanstack/react-form"
 import { toast } from "sonner"
-import { UpdateProfile } from "@/types"
+import {
+    UpdateProfileInput,
+    BackendProfile,
+    NormalizedProfile,
+    ProfileFormValues,
+    Gender,
+    ActivityLevel,
+    BodyGoals,
+} from "@/types"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import axios from "axios"
 import { format, addWeeks } from "date-fns"
@@ -21,7 +30,6 @@ import {
 import {
     Field,
     FieldError,
-    FieldGroup, // Kept in case required by other components
     FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -38,67 +46,95 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { cn } from "@/lib/utils"
 
 export default function PersonalInfoForm() {
     // 1. Fetch current profile data
-    const { data: profile, isLoading: isProfileLoading } = useQuery({
+    const { data: profile, isLoading: isProfileLoading } = useQuery<BackendProfile | null>({
         queryKey: ['get-profile'],
         queryFn: async () => {
-            const token = localStorage.getItem('token')
+            const token = localStorage.getItem("token")
             if (!token) return null
-            const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/profile/get-profile`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
+
+            const response = await axios.get(
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user-profile/get-profile`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
                 }
-            })
+            )
             return response.data
-        }
+        },
     })
 
     // 2. Setup Mutation for updates
-    const updateProfile = useMutation({
+    const updateProfile = useMutation<unknown, unknown, UpdateProfileInput>({
         mutationKey: ['update-profile'],
-        mutationFn: async (data: any) => {
-            const token = localStorage.getItem('token')
-            if (!token) throw new Error("No token found")
-            const response = await axios.patch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user-profile/update-profile`, data, {
-                headers: {
-                    Authorization: `Bearer ${token}`
+        mutationFn: async (data: UpdateProfileInput) => {
+            const token = localStorage.getItem("token")
+            if (!token) {
+                throw new Error("Missing auth token")
+            }
+
+            const response = await axios.patch(
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user-profile/update-profile`,
+                data,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
                 }
-            })
+            )
             return response.data
-        }
+        },
     })
+
+    // Flatten profile shape so personalInfo and targets fields are available at top level
+    const normalizedProfile = React.useMemo<NormalizedProfile | null>(() => {
+        if (!profile) return null;
+        const pi = profile.personalInfo ?? {};
+        const targetsSource = profile.targets;
+        const targets = Array.isArray(targetsSource)
+            ? targetsSource[0] ?? {}
+            : targetsSource ?? {};
+        return { ...(profile ?? {}), ...(pi ?? {}), ...(targets ?? {}) };
+    }, [profile]);
+
+    const buildDefaultValues = (src: NormalizedProfile | null): ProfileFormValues => ({
+        email: src?.email ?? "",
+        firstName: src?.firstName ?? "",
+        lastName: src?.lastName ?? "",
+        phoneNumber: src?.phoneNumber ?? "",
+        currentPassword: "",
+        newPassword: "",
+        height: src?.height ?? "",
+        currentWeight: src?.currentWeight ?? "",
+        gender: (src?.gender as Gender) ?? "Male",
+        avgWorkoutMinutes: src?.avgWorkoutMinutes ?? "",
+        workoutDaysPerWeek: src?.workoutDaysPerWeek ?? "",
+        birthDate: src?.birthDate
+            ? format(new Date(src.birthDate), "dd/MM/yyyy")
+            : "",
+        goalWeight: src?.goalWeight ?? "",
+        targetDuration: src?.targetDuration ?? "",
+        // Use backend values directly, fall back only if missing
+        activityLevel: (src?.activityLevel as ActivityLevel) ?? "Beginner",
+        bodyGoals: (src?.bodyGoals as BodyGoals) ?? "LEAN_MUSCLE_GAIN",
+        endDate: src?.endDate ?? "",
+    });
+
+    // Keep an immutable snapshot of the initial values to detect changes
+    const initialValuesRef = React.useRef<ProfileFormValues>(
+        buildDefaultValues(normalizedProfile)
+    );
+    const [isEditing, setIsEditing] = React.useState(false);
 
     // 3. Initialize Form with dynamic default values based on profile
     const form = useForm({
-        defaultValues: {
-            email: profile?.email,
-            firstName: profile?.firstName,
-            lastName: profile?.lastName,
-            phoneNumber: profile?.phoneNumber,
-            currentPassword: "",
-            newPassword: "",
-            password: "",
-            height: profile?.height || "",
-            currentWeight: profile?.currentWeight || "",
-            gender: (profile?.gender as any) || "Male",
-            avgWorkoutMinutes: profile?.avgWorkoutMinutes || "",
-            workoutDaysPerWeek: profile?.workoutDaysPerWeek || "",
-            birthDate: profile?.birthDate || "",
-            goalWeight: profile?.goalWeight || "",
-            targetDuration: profile?.targetDuration || "",
-            activityLevel: (profile?.activityLevel as any) || "Beginner",
-            bodyGoals: (profile?.bodyGoals as any) || "LeanMuscleGain",
-            endDate: profile?.endDate || "",
-        },
-        validators: {
-            onSubmit: UpdateProfile as any,
-        },
+        defaultValues: initialValuesRef.current,
         onSubmit: async ({ value }) => {
             try {
-                const submissionData = { ...value };
+                const submissionData: ProfileFormValues = { ...value };
                 // Calculate endDate if targetDuration is provided (weeks)
                 if (submissionData.targetDuration) {
                     const weeks = parseInt(submissionData.targetDuration);
@@ -108,40 +144,111 @@ export default function PersonalInfoForm() {
                     }
                 }
 
-                // Password logic
-                if (value.currentPassword && value.newPassword) {
-                    // Check if current password matches backend password
-                    if (value.currentPassword === profile?.password) {
-                        submissionData.password = value.newPassword;
+                // Convert birthDate from dd/MM/yyyy to ISO string if present,
+                // otherwise remove it so Zod doesn't try to coerce an empty string.
+                if (submissionData.birthDate) {
+                    const raw = String(submissionData.birthDate)
+                    const [dd, mm, yyyy] = raw.split("/")
+                    if (dd && mm && yyyy) {
+                        const parsed = new Date(
+                            Number(yyyy),
+                            Number(mm) - 1,
+                            Number(dd)
+                        )
+                        if (!Number.isNaN(parsed.getTime())) {
+                            submissionData.birthDate = parsed.toISOString()
+                        } else {
+                            toast.error("Invalid birth date. Please use DD/MM/YYYY.")
+                            return
+                        }
                     } else {
-                        // If it doesn't match, you might want to show a toast or error
-                        // But per your request, we send the original backend password
-                        submissionData.password = profile?.password;
-                        toast.error("Current password incorrect. Password not updated.");
+                        toast.error("Invalid birth date. Please use DD/MM/YYYY.")
+                        return
                     }
                 } else {
-                    // Default behavior: keep existing password
-                    submissionData.password = profile?.password;
+                    delete submissionData.birthDate
                 }
 
-                // Clean up helper fields before sending to API
-                delete (submissionData as any).currentPassword;
-                delete (submissionData as any).newPassword;
+                // If endDate is still empty, drop it so z.coerce.date doesn't see "".
+                if (!submissionData.endDate) {
+                    delete submissionData.endDate
+                }
 
-                await updateProfile.mutateAsync(submissionData)
+                // Drop empty password helpers so backend Zod (min(1)) doesn't see "".
+                if (!submissionData.currentPassword) {
+                    delete submissionData.currentPassword
+                }
+                if (!submissionData.newPassword) {
+                    delete submissionData.newPassword
+                }
+
+                // Password logic: only send password fields when user is trying to change it.
+                if (value.currentPassword && value.newPassword) {
+                    submissionData.currentPassword = value.currentPassword;
+                    submissionData.newPassword = value.newPassword; 
+                }
+
+                // Build a backend-safe payload with correct types
+                const backendPayload: UpdateProfileInput = {}
+
+                if (submissionData.email !== undefined) backendPayload.email = submissionData.email
+                if (submissionData.firstName !== undefined) backendPayload.firstName = submissionData.firstName
+                if (submissionData.lastName !== undefined) backendPayload.lastName = submissionData.lastName
+                if (submissionData.phoneNumber !== undefined) backendPayload.phoneNumber = submissionData.phoneNumber
+
+                if (submissionData.height !== undefined) backendPayload.height = Number(submissionData.height)
+                if (submissionData.currentWeight !== undefined) backendPayload.currentWeight = Number(submissionData.currentWeight)
+                if (submissionData.gender !== undefined && submissionData.gender !== "")
+                    backendPayload.gender = submissionData.gender as Gender
+                if (submissionData.avgWorkoutMinutes !== undefined)
+                    backendPayload.avgWorkoutMinutes = Number(submissionData.avgWorkoutMinutes)
+                if (submissionData.workoutDaysPerWeek !== undefined)
+                    backendPayload.workoutDaysPerWeek = Number(submissionData.workoutDaysPerWeek)
+
+                if (submissionData.birthDate !== undefined) backendPayload.birthDate = submissionData.birthDate
+
+                if (submissionData.goalWeight !== undefined) backendPayload.goalWeight = Number(submissionData.goalWeight)
+                if (submissionData.targetDuration !== undefined) backendPayload.targetDuration = submissionData.targetDuration
+                if (submissionData.activityLevel !== undefined && submissionData.activityLevel !== "")
+                    backendPayload.activityLevel = submissionData.activityLevel as ActivityLevel
+                if (submissionData.bodyGoals !== undefined && submissionData.bodyGoals !== "")
+                    backendPayload.bodyGoals = submissionData.bodyGoals as BodyGoals
+                if (submissionData.endDate !== undefined && submissionData.endDate !== null)
+                    backendPayload.endDate = String(submissionData.endDate)
+
+                if (submissionData.currentPassword !== undefined)
+                    backendPayload.currentPassword = submissionData.currentPassword
+                if (submissionData.newPassword !== undefined)
+                    backendPayload.newPassword = submissionData.newPassword
+
+                await updateProfile.mutateAsync(backendPayload)
+                // After successful save, treat current values as the new "initial" snapshot
+                initialValuesRef.current = form.state.values;
+                setIsEditing(false);
                 toast.success("Profile updated successfully")
-            } catch (error) {
-                toast.error("Failed to update profile")
+            } catch (error: unknown) {
+                const message =
+                    axios.isAxiosError(error)
+                        ? (error.response?.data as { message?: string } | undefined)?.message
+                        : undefined;
+                if (message === "Current password incorrect") {
+                    toast.error("Current password incorrect. Password not updated.");
+                } else {
+                    toast.error("Failed to update profile");
+                }
             }
         },
     })
 
-    // Sync form with profile data when it loads
+    // Sync form with profile data when it loads / changes
     React.useEffect(() => {
-        if (profile) {
-            form.reset()
+        if (normalizedProfile) {
+            const next = buildDefaultValues(normalizedProfile);
+            initialValuesRef.current = next;
+            form.reset(next);
+            setIsEditing(false);
         }
-    }, [profile])
+    }, [normalizedProfile, form])
 
     if (isProfileLoading) {
         return (
@@ -168,40 +275,39 @@ export default function PersonalInfoForm() {
                     }}
                     className="grid grid-cols-1 gap-6 md:grid-cols-2"
                 >
-                    <form.Field
-                        name="firstName"
-                        children={(field) => (
+                    <form.Field name="firstName">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>First Name</FieldLabel>
                                 <Input
                                     value={field.state.value}
                                     onBlur={field.handleBlur}
                                     onChange={(e) => field.handleChange(e.target.value)}
-                                    placeholder="John"
+                                    placeholder="Manas"
+                                    disabled={!isEditing}
                                 />
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
-                    <form.Field
-                        name="lastName"
-                        children={(field) => (
+                    </form.Field>
+                    <form.Field name="lastName">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>Last Name</FieldLabel>
                                 <Input
                                     value={field.state.value}
                                     onBlur={field.handleBlur}
                                     onChange={(e) => field.handleChange(e.target.value)}
-                                    placeholder="Doe"
+                                    placeholder="Sisodia"
+                                    disabled={!isEditing}
                                 />
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
+                    </form.Field>
 
-                    <form.Field
-                        name="email"
-                        children={(field) => (
+                    <form.Field name="email">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>Email</FieldLabel>
                                 <Input
@@ -209,16 +315,16 @@ export default function PersonalInfoForm() {
                                     value={field.state.value}
                                     onBlur={field.handleBlur}
                                     onChange={(e) => field.handleChange(e.target.value)}
-                                    placeholder="john.doe@example.com"
+                                    placeholder="example@example.com"
+                                    disabled={!isEditing}
                                 />
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
+                    </form.Field>
 
-                    <form.Field
-                        name="phoneNumber"
-                        children={(field) => (
+                    <form.Field name="phoneNumber">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>Phone Number</FieldLabel>
                                 <Input
@@ -226,15 +332,15 @@ export default function PersonalInfoForm() {
                                     onBlur={field.handleBlur}
                                     onChange={(e) => field.handleChange(e.target.value)}
                                     placeholder="1234567890"
+                                    disabled={!isEditing}
                                 />
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
+                    </form.Field>
 
-                    <form.Field
-                        name="currentPassword"
-                        children={(field) => (
+                    <form.Field name="currentPassword">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>Current Password</FieldLabel>
                                 <Input
@@ -243,15 +349,15 @@ export default function PersonalInfoForm() {
                                     onBlur={field.handleBlur}
                                     onChange={(e) => field.handleChange(e.target.value)}
                                     placeholder="Enter current password to change"
+                                    disabled={!isEditing}
                                 />
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
+                    </form.Field>
 
-                    <form.Field
-                        name="newPassword"
-                        children={(field) => (
+                    <form.Field name="newPassword">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>New Password</FieldLabel>
                                 <Input
@@ -260,20 +366,21 @@ export default function PersonalInfoForm() {
                                     onBlur={field.handleBlur}
                                     onChange={(e) => field.handleChange(e.target.value)}
                                     placeholder="Enter new password"
+                                    disabled={!isEditing}
                                 />
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
+                    </form.Field>
 
-                    <form.Field
-                        name="gender"
-                        children={(field) => (
+                    <form.Field name="gender">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>Gender</FieldLabel>
                                 <Select
                                     value={field.state.value}
-                                    onValueChange={field.handleChange}
+                                    onValueChange={(value) => field.handleChange(value as Gender | "")}
+                                    disabled={!isEditing}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select gender" />
@@ -288,39 +395,90 @@ export default function PersonalInfoForm() {
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
+                    </form.Field>
 
-                    <form.Field
-                        name="birthDate"
-                        children={(field) => (
-                            <Field>
-                                <FieldLabel>Birth Date</FieldLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant={"outline"}
-                                            className={cn(
-                                                "w-full justify-start text-left font-normal",
-                                                !field.state.value && "text-muted-foreground"
-                                            )}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {field.state.value ? format(new Date(field.state.value), "PPP") : <span>Pick a date</span>}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
-                                        <Calendar
-                                            mode="single"
-                                            selected={field.state.value ? new Date(field.state.value) : undefined}
-                                            onSelect={(date) => field.handleChange(date?.toISOString() || "")}
-                                            initialFocus
+                    <form.Field name="birthDate">
+                        {(field) => {
+                            const raw = field.state.value as string | undefined
+                            let selectedDate: Date | undefined
+                            if (raw) {
+                                const [dd, mm, yyyy] = raw.split("/")
+                                if (dd && mm && yyyy) {
+                                    const parsed = new Date(
+                                        Number(yyyy),
+                                        Number(mm) - 1,
+                                        Number(dd)
+                                    )
+                                    if (!Number.isNaN(parsed.getTime())) {
+                                        selectedDate = parsed
+                                    }
+                                }
+                            }
+
+                            const handleBirthDateChange = (value: string) => {
+                                // keep only digits, max 8 (ddMMyyyy)
+                                const digits = value.replace(/\D/g, "").slice(0, 8)
+                                let formatted = digits
+                                if (digits.length > 2 && digits.length <= 4) {
+                                    formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`
+                                } else if (digits.length > 4) {
+                                    formatted = `${digits.slice(0, 2)}/${digits.slice(
+                                        2,
+                                        4
+                                    )}/${digits.slice(4)}`
+                                }
+                                field.handleChange(formatted)
+                            }
+
+                            return (
+                                <Field>
+                                    <FieldLabel>Birth Date (dd/mm/yyyy)</FieldLabel>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            placeholder="DD/MM/YYYY"
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={(e) =>
+                                                handleBirthDateChange(e.target.value)
+                                            }
+                                            className="flex-1"
+                                            disabled={!isEditing}
                                         />
-                                    </PopoverContent>
-                                </Popover>
-                                <FieldError errors={field.state.meta.errors} />
-                            </Field>
-                        )}
-                    />
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    className="px-3"
+                                                    disabled={!isEditing}
+                                                >
+                                                    <CalendarIcon className="h-4 w-4" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={selectedDate}
+                                                    onSelect={(date) =>
+                                                        field.handleChange(
+                                                            date
+                                                                ? format(date, "dd/MM/yyyy")
+                                                                : ""
+                                                        )
+                                                    }
+                                                    captionLayout="dropdown"
+                                                    fromYear={1900}
+                                                    toYear={new Date().getFullYear()}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                    <FieldError errors={field.state.meta.errors} />
+                                </Field>
+                            )
+                        }}
+                    </form.Field>
                 </form>
 
             </CardContent>
@@ -333,16 +491,15 @@ export default function PersonalInfoForm() {
             </CardHeader>
             <CardContent>
                 <form
-                    id="profile-form"
+                    id="profile-form-goals"
                     onSubmit={(e) => {
                         e.preventDefault()
                         form.handleSubmit()
                     }}
                     className="grid grid-cols-1 gap-6 md:grid-cols-2"
                 >
-                    <form.Field
-                        name="height"
-                        children={(field) => (
+                    <form.Field name="height">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>Height (cm)</FieldLabel>
                                 <Input
@@ -350,15 +507,15 @@ export default function PersonalInfoForm() {
                                     onBlur={field.handleBlur}
                                     onChange={(e) => field.handleChange(e.target.value)}
                                     placeholder="180"
+                                    disabled={!isEditing}
                                 />
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
+                    </form.Field>
 
-                    <form.Field
-                        name="currentWeight"
-                        children={(field) => (
+                    <form.Field name="currentWeight">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>Current Weight (kg)</FieldLabel>
                                 <Input
@@ -366,15 +523,15 @@ export default function PersonalInfoForm() {
                                     onBlur={field.handleBlur}
                                     onChange={(e) => field.handleChange(e.target.value)}
                                     placeholder="75"
+                                    disabled={!isEditing}
                                 />
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
+                    </form.Field>
 
-                    <form.Field
-                        name="goalWeight"
-                        children={(field) => (
+                    <form.Field name="goalWeight">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>Goal Weight (kg)</FieldLabel>
                                 <Input
@@ -382,20 +539,23 @@ export default function PersonalInfoForm() {
                                     onBlur={field.handleBlur}
                                     onChange={(e) => field.handleChange(e.target.value)}
                                     placeholder="70"
+                                    disabled={!isEditing}
                                 />
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
+                    </form.Field>
 
-                    <form.Field
-                        name="activityLevel"
-                        children={(field) => (
+                    <form.Field name="activityLevel">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>Activity Level</FieldLabel>
                                 <Select
                                     value={field.state.value}
-                                    onValueChange={field.handleChange}
+                                    onValueChange={(value) =>
+                                        field.handleChange(value as ActivityLevel | "")
+                                    }
+                                    disabled={!isEditing}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select activity level" />
@@ -410,38 +570,39 @@ export default function PersonalInfoForm() {
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
+                    </form.Field>
 
-                    <form.Field
-                        name="bodyGoals"
-                        children={(field) => (
+                    <form.Field name="bodyGoals">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>Body Goal</FieldLabel>
                                 <Select
                                     value={field.state.value}
-                                    onValueChange={field.handleChange}
+                                    onValueChange={(value) =>
+                                        field.handleChange(value as BodyGoals | "")
+                                    }
+                                    disabled={!isEditing}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select body goal" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="WeightLoss">Weight Loss</SelectItem>
-                                        <SelectItem value="WeightGain">Weight Gain</SelectItem>
-                                        <SelectItem value="MassGain">Mass Gain</SelectItem>
-                                        <SelectItem value="LeanMuscleGain">Lean Muscle Gain</SelectItem>
-                                        <SelectItem value="StrengthGain">Strength Gain</SelectItem>
-                                        <SelectItem value="EnduranceGain">Endurance Gain</SelectItem>
-                                        <SelectItem value="BalancedGain">Balanced Gain</SelectItem>
+                                        <SelectItem value="WEIGHT_LOSS">Weight Loss</SelectItem>
+                                        <SelectItem value="WEIGHT_GAIN">Weight Gain</SelectItem>
+                                        <SelectItem value="MASS_GAIN">Mass Gain</SelectItem>
+                                        <SelectItem value="LEAN_MUSCLE_GAIN">Lean Muscle Gain</SelectItem>
+                                        <SelectItem value="STRENGTH_GAIN">Strength Gain</SelectItem>
+                                        <SelectItem value="ENDURANCE_GAIN">Endurance Gain</SelectItem>
+                                        <SelectItem value="BALANCED_GAIN">Balanced Gain</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
+                    </form.Field>
 
-                    <form.Field
-                        name="avgWorkoutMinutes"
-                        children={(field) => (
+                    <form.Field name="avgWorkoutMinutes">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>Avg Workout (mins)</FieldLabel>
                                 <Input
@@ -449,15 +610,15 @@ export default function PersonalInfoForm() {
                                     onBlur={field.handleBlur}
                                     onChange={(e) => field.handleChange(e.target.value)}
                                     placeholder="60"
+                                    disabled={!isEditing}
                                 />
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
+                    </form.Field>
 
-                    <form.Field
-                        name="workoutDaysPerWeek"
-                        children={(field) => (
+                    <form.Field name="workoutDaysPerWeek">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>Workout Days / Week</FieldLabel>
                                 <Input
@@ -465,15 +626,15 @@ export default function PersonalInfoForm() {
                                     onBlur={field.handleBlur}
                                     onChange={(e) => field.handleChange(e.target.value)}
                                     placeholder="5"
+                                    disabled={!isEditing}
                                 />
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
+                    </form.Field>
 
-                    <form.Field
-                        name="targetDuration"
-                        children={(field) => (
+                    <form.Field name="targetDuration">
+                        {(field) => (
                             <Field>
                                 <FieldLabel>Target Duration in Week</FieldLabel>
                                 <Input
@@ -481,28 +642,48 @@ export default function PersonalInfoForm() {
                                     onBlur={field.handleBlur}
                                     onChange={(e) => field.handleChange(e.target.value)}
                                     placeholder="12"
+                                    disabled={!isEditing}
                                 />
                                 <FieldError errors={field.state.meta.errors} />
                             </Field>
                         )}
-                    />
+                    </form.Field>
                 </form>
             </CardContent>
 
             <CardFooter className="flex justify-between border-t mt-4 pt-6">
-                <Button type="button" variant="ghost" onClick={() => form.reset()}>
-                    Reset
-                </Button>
-                <Button
-                    type="submit"
-                    form="profile-form"
-                    disabled={updateProfile.isPending}
-                >
-                    {updateProfile.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Save Changes
-                </Button>
+                {!isEditing ? (
+                    <Button
+                        type="button"
+                        className="ml-auto"
+                        onClick={() => setIsEditing(true)}
+                    >
+                        Update Profile
+                    </Button>
+                ) : (
+                    <>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => {
+                                form.reset(initialValuesRef.current);
+                                setIsEditing(false);
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            form="profile-form"
+                            disabled={updateProfile.isPending || !isEditing}
+                        >
+                            {updateProfile.isPending && (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            Save Changes
+                        </Button>
+                    </>
+                )}
             </CardFooter>
         </Card>
     )

@@ -2,14 +2,14 @@ import { Router } from "express";
 import { prisma } from "db/index";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { AuthInput, SigninInput } from "../../types";
+import { AuthInput, PostSignUp, SigninInput } from "../../types";
 
 const userRouter = Router();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
-    throw new Error("JWT_SECRET not present, Check .env file.")
+  throw new Error("JWT_SECRET not present, Check .env file.")
 }
 
 userRouter.post("/signup", async (req, res) => {
@@ -23,18 +23,9 @@ userRouter.post("/signup", async (req, res) => {
     return;
   }
 
-  const { email, password, firstName, lastName, phoneNumber} = parsed.data;
+  const { email, password, firstName, lastName, phoneNumber } = parsed.data;
 
   try {
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      res.status(409).json({ message: "User already exists" });
-      return;
-    }
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
@@ -48,11 +39,27 @@ userRouter.post("/signup", async (req, res) => {
     });
 
 
-    return res.status(201).json({
-      userId: user.userId,
-      email: user.email,
-      firstName: user.firstName,
-    });
+    const token = jwt.sign(
+      { sub: user.userId },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    const cookieMaxAge = 7 * 24 * 60 * 60; // 7 days in seconds
+    return res
+      .cookie("token", token, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: cookieMaxAge * 1000,
+      })
+      .json({
+        message: "Logged in",
+        jwt: token,
+        userId: user.userId,
+        email: user.email,
+        firstName: user.firstName,
+      });
   } catch (error) {
     console.error("Error during sign-up:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -118,6 +125,65 @@ userRouter.post("/signin", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+userRouter.post("/post-signup", async (req, res) => {
+  const parsed = PostSignUp.safeParse(req.body)
+
+  if (!parsed.success) {
+    res.status(400).json({
+      message: "Incorrect inputs",
+      issues: parsed.error.issues,
+    });
+    return;
+  }
+
+  const { email, height, currentWeight, gender, avgWorkoutMinutes, workoutDaysPerWeek, birthDate, goalWeight, targetDuration, activityLevel, bodyGoals, endDate } = parsed.data;
+
+  try {
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!existingUser) {
+      res.status(409).json({ message: "User dosen't exists" });
+      return;
+    }
+
+    const user = await prisma.user.update({
+      where: { email },
+      data: {
+        personalInfo: {
+          create: {
+            height,
+            currentWeight,
+            gender,
+            avgWorkoutMinutes,
+            workoutDaysPerWeek,
+            birthDate
+          }
+        },
+        targets: {
+          create: {
+            goalWeight,
+            targetDuration,
+            activityLevel,
+            bodyGoals,
+            endDate
+          }
+        }
+      },
+    });
+
+    return res
+      .status(200)
+      .json({
+        message: "Profile Created",
+      });
+  } catch (error) {
+    console.error("Error during sign-up:", error);
+    res.status(500).json({ message: "Internal server error" });
+  };
+})
 
 
 export default userRouter;

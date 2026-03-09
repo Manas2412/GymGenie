@@ -14,23 +14,36 @@ export const SigninInput = AuthInput.pick({
   password: true,
 });
 
-export const UpdateProfile = z.object({
-  email: z.string().email(),
-  firstName: z.string(),
-  lastName: z.string(),
-  phoneNumber: z.string().min(10).max(10),
-  password: z.string().min(1),
-  height: z.string().optional(),
-  currentWeight: z.string().optional(),
+const BaseProfileFields = z.object({
+  email: z.string().email().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  phoneNumber: z.string().min(10).max(10).optional(),
+  password: z.string().min(1).optional(),
+  height: z.coerce.number().optional(),
+  currentWeight: z.coerce.number().optional(),
   gender: z.enum(["Male", "Female", "NonBinary", "PreferNotToSay"]).optional(),
-  avgWorkoutMinutes: z.string().optional(),
-  workoutDaysPerWeek: z.string().optional(),
-  birthDate: z.string().optional(),
-  goalWeight: z.string().optional(),
-  targetDuration: z.string().optional(),
+  avgWorkoutMinutes: z.coerce.number().optional(),
+  workoutDaysPerWeek: z.coerce.number().optional(),
+  birthDate: z.coerce.date().optional(),
+  goalWeight: z.coerce.number().optional(),
+  targetDuration: z.string(),
   activityLevel: z.enum(["Beginner", "Intermediate", "Advanced", "Expert"]).optional(),
-  bodyGoals: z.enum(["WeightLoss", "WeightGain", "MassGain", "LeanMuscleGain", "StrengthGain", "EnduranceGain", "BalancedGain"]).optional(),
-  endDate: z.string().optional(),
+  bodyGoals: z.enum([
+    "WEIGHT_LOSS",
+    "WEIGHT_GAIN",
+    "MASS_GAIN",
+    "LEAN_MUSCLE_GAIN",
+    "STRENGTH_GAIN",
+    "ENDURANCE_GAIN",
+    "BALANCED_GAIN",
+  ]).optional(),
+  endDate: z.coerce.date().optional(),
+});
+
+export const UpdateProfile = BaseProfileFields.partial().extend({
+  currentPassword: z.string().min(1).optional(),
+  newPassword: z.string().min(1).optional(),
 });
 
 const exerciseSchema = z.object({
@@ -47,10 +60,20 @@ export const UpdateWorkoutInput = z.object({
   legs: z.array(exerciseSchema).optional(),
   core: z.array(exerciseSchema).optional(),
   cardio: z.array(exerciseSchema).optional(),
-  days: z.enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]).optional()
+  days: z.enum([
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+  ]).optional()
 });
 
 export const UpdateMachineInput = z.object({
   name: z.string().min(1),
 });
+
+export const PostSignUp = BaseProfileFields;
 

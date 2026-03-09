@@ -81,7 +81,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     queryFn: async () => {
       const token = localStorage.getItem('token')
       if (!token) return null
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/profile/get-profile`, {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user-profile/get-profile`, {
         headers: {
           Authorization: `Bearer ${token}`
         }

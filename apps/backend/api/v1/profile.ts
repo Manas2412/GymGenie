@@ -44,13 +44,17 @@ userProfileRouter.get("/get-profile", authMiddleware, async (req, res) => {
             return;
         }
 
-        const withRelations = user as typeof user & { personalInfo: typeof user.personalInfo; targets: typeof user.targets };
+        const withRelations = user as typeof user & {
+            personalInfo: typeof user.personalInfo;
+            targets: typeof user.targets;
+        };
+
+        // Never expose password hash in profile response
         res.status(200).json({
             userId: user.userId,
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            password: user.password,
             phoneNumber: user.phoneNumber,
             personalInfo: withRelations.personalInfo,
             targets: withRelations.targets,
@@ -85,7 +89,42 @@ userProfileRouter.patch("/update-profile", authMiddleware, async (req, res) => {
         if (body.firstName !== undefined) userUpdateData.firstName = body.firstName;
         if (body.lastName !== undefined) userUpdateData.lastName = body.lastName;
         if (body.phoneNumber !== undefined) userUpdateData.phoneNumber = body.phoneNumber;
-        if (body.password !== undefined) userUpdateData.password = await bcrypt.hash(body.password, 10);
+
+        // Handle password change securely:
+        // - Only run when BOTH currentPassword and newPassword are provided (user explicitly wants to change password)
+        // - Compare currentPassword against stored hash
+        if (body.currentPassword && body.newPassword) {
+            const existingUser = await prisma.user.findUnique({
+                where: { userId },
+            });
+
+            if (!existingUser) {
+                res.status(404).json({ message: "User not found" });
+                return;
+            }
+
+            const isCurrentValid = await bcrypt.compare(
+                body.currentPassword,
+                existingUser.password
+            );
+
+            if (!isCurrentValid) {
+                res.status(400).json({
+                    message: "Current password incorrect",
+                    success: false,
+                });
+                return;
+            }
+
+            userUpdateData.password = await bcrypt.hash(body.newPassword, 10);
+        } else if (body.currentPassword || body.newPassword) {
+            // One of the fields is present without the other: treat as invalid password-change attempt
+            res.status(400).json({
+                message: "Both currentPassword and newPassword are required to change password",
+                success: false,
+            });
+            return;
+        }
 
         await prisma.$transaction(async (tx) => {
             await tx.user.update({
