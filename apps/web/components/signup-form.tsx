@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
@@ -10,7 +11,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
     Field,
-    FieldDescription,
     FieldGroup,
     FieldLabel
 } from "@/components/ui/field"
@@ -371,13 +371,12 @@ export function SignupForm({
                     </div>
 
                     <div className="relative hidden bg-muted md:block overflow-hidden">
-                        <img
+                        <Image
                             src={step === 0 ? "/auth-side.jpg" : step === 1 ? "/personal-info.jpg" : "/targets.jpg"}
                             alt="Gym Interior"
+                            fill
                             className="absolute inset-0 h-full w-full object-cover transition-all duration-1000 animate-in fade-in zoom-in-95 brightness-[0.8]"
-                            onError={(e) => {
-                                (e.target as HTMLImageElement).src = "/auth-side.jpg"
-                            }}
+                            priority={step === 0}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
                         <div className="absolute bottom-8 left-8 right-8 text-white">
