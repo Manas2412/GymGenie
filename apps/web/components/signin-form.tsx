@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
-import axios from "axios"
+import axios, { AxiosError } from "axios"
 import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -28,17 +28,26 @@ export function SigninForm({
     const [validationError, setValidationError] = useState<string | null>(null)
 
     const signinMutation = useMutation({
-        mutationFn: async (data: any) => {
+        mutationFn: async (data: { email: string; password: string }) => {
             const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user/signin`, data)
             return response.data
         },
-        
         onSuccess: (data) => {
             if (data.jwt) {
                 localStorage.setItem("token", data.jwt);
             }
-        router.push("/dashboard")
-    }
+            router.push("/dashboard")
+        },
+        onError: (error) => {
+            if (axios.isAxiosError(error)) {
+                const msg =
+                    (error.response?.data as { message?: string } | undefined)?.message ||
+                    "Invalid email or password"
+                setValidationError(msg)
+            } else {
+                setValidationError("Something went wrong while signing in.")
+            }
+        },
     })
 
 const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,7 +67,7 @@ const handlesignin = async (e: React.FormEvent) => {
     })
 }
 
-const error = validationError || (signinMutation.error as any)?.response?.data?.message || signinMutation.error?.message
+const error = validationError
 
 return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>

@@ -4,12 +4,15 @@ import Sidebar from '@/components/side-bar'
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
+import { useRouter } from 'next/navigation'
 
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
+    const router = useRouter()
+
     const { data: profile, isLoading } = useQuery({
         queryKey: ['profile'],
         queryFn: async () => {
@@ -23,6 +26,13 @@ export default function DashboardLayout({
             return response.data
         }
     })
+
+    React.useEffect(() => {
+        // If not loading and no profile, force user to signin
+        if (!isLoading && !profile) {
+            router.replace('/signin')
+        }
+    }, [isLoading, profile, router])
 
     return (
         <div suppressHydrationWarning>

@@ -25,22 +25,21 @@ model User {
 }
 
 model PersonalInfo {
-  personalInfoId     String   @id @default(uuid())
-  userId             String   @unique
+  personalInfoId     String           @id @default(uuid())
+  userId             String           @unique
   height             Int
-  currentWeight      Int
+  weightProgress     WeightProgress[]
   gender             Gender
   avgWorkoutMinutes  Int
   workoutDaysPerWeek Int
   birthDate          DateTime
-  user               User     @relation(fields: [userId], references: [userId])
+  user               User             @relation(fields: [userId], references: [userId])
 
   @@index([userId], name: "personal_info_user_id_idx")
 }
 
 model Target {
   targetId       String        @id @default(uuid())
-  goalWeight     Int
   targetDuration String
   activityLevel  ActivityLevel
   bodyGoals      BodyGoals
@@ -50,6 +49,20 @@ model Target {
   user           User          @relation(fields: [userId], references: [userId])
 
   @@index([userId], name: "target_user_id_idx")
+}
+
+model WeightProgress {
+  weightId       String       @id @default(uuid())
+  currentWeight  String
+  targetWeight   String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  personalInfoId String
+  personalInfo   PersonalInfo @relation(fields: [personalInfoId], references: [personalInfoId])
+
+  @@index([personalInfoId], name: "weight_progress_personal_info_id_idx")
+  @@index([createdAt], name: "weight_progress_created_at_idx")
+  @@index([updatedAt], name: "weight_progress_updated_at_idx")
 }
 
 model Machines {
@@ -77,7 +90,6 @@ model Workout {
   @@index([createdAt], name: "workout_created_at_idx")
   @@index([userId], name: "workout_user_id_idx")
 }
-
 
 model Chest {
   chestId   String  @id @default(uuid())

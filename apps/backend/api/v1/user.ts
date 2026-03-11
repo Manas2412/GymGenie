@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request, type Response } from "express";
 import { prisma } from "db/index";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -12,7 +12,7 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET not present, Check .env file.")
 }
 
-userRouter.post("/signup", async (req, res) => {
+userRouter.post("/signup", async (req: Request, res: Response) => {
   const parsed = AuthInput.safeParse(req.body);
 
   if (!parsed.success) {
@@ -66,7 +66,7 @@ userRouter.post("/signup", async (req, res) => {
   }
 });
 
-userRouter.post("/signin", async (req, res) => {
+userRouter.post("/signin", async (req: Request, res: Response) => {
   const parsed = SigninInput.safeParse(req.body);
 
   if (!parsed.success) {
@@ -126,7 +126,7 @@ userRouter.post("/signin", async (req, res) => {
   }
 });
 
-userRouter.post("/post-signup", async (req, res) => {
+userRouter.post("/post-signup", async (req: Request, res: Response) => {
   const parsed = PostSignUp.safeParse(req.body)
 
   if (!parsed.success) {
@@ -137,7 +137,20 @@ userRouter.post("/post-signup", async (req, res) => {
     return;
   }
 
-  const { email, height, currentWeight, gender, avgWorkoutMinutes, workoutDaysPerWeek, birthDate, goalWeight, targetDuration, activityLevel, bodyGoals, endDate } = parsed.data;
+  const {
+    email,
+    height,
+    currentWeight,
+    gender,
+    avgWorkoutMinutes,
+    workoutDaysPerWeek,
+    birthDate,
+    goalWeight,
+    targetDuration,
+    activityLevel,
+    bodyGoals,
+    endDate,
+  } = parsed.data;
 
   try {
     const existingUser = await prisma.user.findUnique({
@@ -149,28 +162,59 @@ userRouter.post("/post-signup", async (req, res) => {
       return;
     }
 
-    const user = await prisma.user.update({
+    // All of these fields are required to create personalInfo and targets
+    if (
+      height == null ||
+      currentWeight == null ||
+      gender == null ||
+      avgWorkoutMinutes == null ||
+      workoutDaysPerWeek == null ||
+      birthDate == null ||
+      goalWeight == null ||
+      targetDuration == null ||
+      activityLevel == null ||
+      bodyGoals == null ||
+      endDate == null
+    ) {
+      res.status(400).json({ message: "Missing required profile fields" });
+      return;
+    }
+
+    // Keep same flow: this should be called once right after /signup
+    const existingPersonalInfo = await prisma.personalInfo.findUnique({
+      where: { userId: existingUser.userId },
+    });
+    if (existingPersonalInfo) {
+      res.status(409).json({ message: "Profile already created" });
+      return;
+    }
+
+    await prisma.user.update({
       where: { email },
       data: {
         personalInfo: {
           create: {
             height,
-            currentWeight,
             gender,
             avgWorkoutMinutes,
             workoutDaysPerWeek,
-            birthDate
-          }
+            birthDate,
+            weightProgress: {
+              create: {
+                currentWeight: String(currentWeight),
+                targetWeight: String(goalWeight),
+              },
+            },
+          },
         },
         targets: {
           create: {
-            goalWeight,
             targetDuration,
             activityLevel,
             bodyGoals,
-            endDate
-          }
-        }
+            endDate,
+          },
+        },
       },
     });
 

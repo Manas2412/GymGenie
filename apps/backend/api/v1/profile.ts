@@ -20,17 +20,24 @@ userProfileRouter.get("/get-profile", authMiddleware, async (req, res) => {
                 personalInfo: {
                     select: {
                         height: true,
-                        currentWeight: true,
                         gender: true,
                         avgWorkoutMinutes: true,
                         workoutDaysPerWeek: true,
-                        birthDate: true
+                        birthDate: true,
+                        weightProgress: {
+                            orderBy: { createdAt: "desc" },
+                            take: 1,
+                            select: {
+                                currentWeight: true,
+                                targetWeight: true,
+                                createdAt: true,
+                            },
+                        },
                     }
                 },
                 targets: {
                     select: {
                         targetId: true,
-                        goalWeight: true,
                         targetDuration: true,
                         activityLevel: true,
                         bodyGoals: true,
@@ -49,6 +56,8 @@ userProfileRouter.get("/get-profile", authMiddleware, async (req, res) => {
             targets: typeof user.targets;
         };
 
+        const latestProgress = withRelations.personalInfo?.weightProgress?.[0];
+
         // Never expose password hash in profile response
         res.status(200).json({
             userId: user.userId,
@@ -56,7 +65,13 @@ userProfileRouter.get("/get-profile", authMiddleware, async (req, res) => {
             firstName: user.firstName,
             lastName: user.lastName,
             phoneNumber: user.phoneNumber,
-            personalInfo: withRelations.personalInfo,
+            personalInfo: withRelations.personalInfo
+                ? {
+                    ...withRelations.personalInfo,
+                    currentWeight: latestProgress?.currentWeight ?? null,
+                    goalWeight: latestProgress?.targetWeight ?? null,
+                }
+                : null,
             targets: withRelations.targets,
             success: true,
         });
@@ -132,12 +147,12 @@ userProfileRouter.patch("/update-profile", authMiddleware, async (req, res) => {
                 data: userUpdateData,
             });
 
-            const personalInfoFields = ["height", "currentWeight", "gender", "avgWorkoutMinutes", "workoutDaysPerWeek", "birthDate"] as const;
+            const personalInfoFields = ["height", "gender", "avgWorkoutMinutes", "workoutDaysPerWeek", "birthDate"] as const;
             const hasPersonalInfo = personalInfoFields.some((k) => body[k] !== undefined);
+            const hasWeights = body.currentWeight !== undefined || body.goalWeight !== undefined;
             if (hasPersonalInfo) {
                 const piData: Record<string, unknown> = {};
                 if (body.height !== undefined) piData.height = Number(body.height);
-                if (body.currentWeight !== undefined) piData.currentWeight = Number(body.currentWeight);
                 if (body.gender !== undefined) piData.gender = body.gender;
                 if (body.avgWorkoutMinutes !== undefined) piData.avgWorkoutMinutes = Number(body.avgWorkoutMinutes);
                 if (body.workoutDaysPerWeek !== undefined) piData.workoutDaysPerWeek = Number(body.workoutDaysPerWeek);
@@ -148,30 +163,66 @@ userProfileRouter.patch("/update-profile", authMiddleware, async (req, res) => {
                         where: { userId },
                         data: piData as Parameters<typeof tx.personalInfo.update>[0]["data"],
                     });
+
+                    if (hasWeights) {
+                        const latest = await tx.weightProgress.findFirst({
+                            where: { personalInfoId: existingPi.personalInfoId },
+                            orderBy: { createdAt: "desc" },
+                        });
+                        const nextCurrent =
+                            body.currentWeight !== undefined
+                                ? String(body.currentWeight)
+                                : latest?.currentWeight;
+                        const nextTarget =
+                            body.goalWeight !== undefined
+                                ? String(body.goalWeight)
+                                : latest?.targetWeight;
+                        if (nextCurrent && nextTarget) {
+                            await tx.weightProgress.create({
+                                data: {
+                                    personalInfoId: existingPi.personalInfoId,
+                                    currentWeight: nextCurrent,
+                                    targetWeight: nextTarget,
+                                },
+                            });
+                        }
+                    }
                 } else {
-                    const required = ["height", "currentWeight", "gender", "avgWorkoutMinutes", "workoutDaysPerWeek", "birthDate"] as const;
+                    const required = ["height", "gender", "avgWorkoutMinutes", "workoutDaysPerWeek", "birthDate"] as const;
                     const hasAll = required.every((k) => body[k] !== undefined);
                     if (hasAll) {
-                        await tx.personalInfo.create({
+                        const createdPi = await tx.personalInfo.create({
                             data: {
                                 userId,
                                 height: Number(body.height),
-                                currentWeight: Number(body.currentWeight),
                                 gender: body.gender!,
                                 avgWorkoutMinutes: Number(body.avgWorkoutMinutes),
                                 workoutDaysPerWeek: Number(body.workoutDaysPerWeek),
                                 birthDate: new Date(body.birthDate!),
                             },
                         });
+
+                        const nextCurrent =
+                            body.currentWeight !== undefined ? String(body.currentWeight) : undefined;
+                        const nextTarget =
+                            body.goalWeight !== undefined ? String(body.goalWeight) : undefined;
+                        if (nextCurrent && nextTarget) {
+                            await tx.weightProgress.create({
+                                data: {
+                                    personalInfoId: createdPi.personalInfoId,
+                                    currentWeight: nextCurrent,
+                                    targetWeight: nextTarget,
+                                },
+                            });
+                        }
                     }
                 }
             }
 
-            const targetFields = ["goalWeight", "targetDuration", "activityLevel", "bodyGoals", "endDate"] as const;
+            const targetFields = ["targetDuration", "activityLevel", "bodyGoals", "endDate"] as const;
             const hasTarget = targetFields.some((k) => body[k] !== undefined);
             if (hasTarget) {
                 const targetData: Record<string, unknown> = {};
-                if (body.goalWeight !== undefined) targetData.goalWeight = Number(body.goalWeight);
                 if (body.targetDuration !== undefined) targetData.targetDuration = body.targetDuration;
                 if (body.activityLevel !== undefined) targetData.activityLevel = body.activityLevel;
                 if (body.bodyGoals !== undefined) targetData.bodyGoals = body.bodyGoals;

@@ -1,10 +1,11 @@
+import { ProgressChart } from '@/components/dashboard/progress_tracker';
 import React from 'react'
-import Workout from './workout/page'
 
 const Dashboard = () => {
   return (
     <div>
-      <h1>Dashboard</h1>
+      <h1>Progress Tracker</h1>
+      <ProgressChart/>
     </div>
   )
 }
