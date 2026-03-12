@@ -97,7 +97,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }
 
   return (
-    <Sidebar variant="inset" collapsible="icon" {...props}>
+  <Sidebar
+    variant="inset"
+    collapsible="icon"
+    className="bg-[#eaf6fb] dark:bg-sidebar"
+    {...props}
+  >
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>

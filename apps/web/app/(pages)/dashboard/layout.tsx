@@ -35,14 +35,16 @@ export default function DashboardLayout({
     }, [isLoading, profile, router])
 
     return (
-        <div suppressHydrationWarning>
-            <Sidebar>
-                <div className="text-4xl font-bold p-4">
-                    Hello, {isLoading ? '...' : profile?.firstName}
-                </div>
-                {children}
-            </Sidebar>
-        </div>
+      <div suppressHydrationWarning>
+        <Sidebar>
+          <div className="text-4xl font-bold p-4 bg-white dark:bg-background rounded-lg">
+            Hello, {isLoading ? "..." : profile?.firstName}
+          </div>
+          <div className="bg-white dark:bg-background rounded-lg mt-2">
+            {children}
+          </div>
+        </Sidebar>
+      </div>
     )
 }
 

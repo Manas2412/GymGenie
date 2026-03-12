@@ -9,10 +9,10 @@ import { ModeToggle } from "@/components/NavBar/mode-toggle"
 
 export default function Sidebar({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider className="bg-sidebar">
+    <SidebarProvider className="bg-[#eaf6fb] dark:bg-sidebar">
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+        <header className="flex h-16 shrink-0 items-center justify-between gap-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 bg-[#eaf6fb] dark:bg-sidebar">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
           </div>

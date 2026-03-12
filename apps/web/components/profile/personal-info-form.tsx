@@ -361,7 +361,7 @@ export default function PersonalInfoForm() {
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-full shadow-lg ">
       <CardHeader>
         <CardTitle className="text-3xl">Personal Information</CardTitle>
         <CardDescription>Update your profile details.</CardDescription>

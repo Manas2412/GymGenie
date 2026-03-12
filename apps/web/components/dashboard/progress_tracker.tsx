@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { TrendingUp } from "lucide-react"
 import { CartesianGrid, LabelList, Line, LineChart, XAxis } from "recharts"
 import { useQuery } from "@tanstack/react-query"
@@ -33,6 +34,8 @@ type ProgressTrackerResponse = {
   success: boolean
 }
 
+export type FilterRange = "7d" | "1m" | "6m" | "1y" | "all"
+
 const chartConfig = {
   currentWeight: {
     label: "Current Weight",
@@ -61,10 +64,12 @@ function WeightProgressChart({
   seriesKey,
   title,
   description,
+  range,
 }: {
   seriesKey: ChartSeriesKey
   title: string
   description: string
+  range: FilterRange
 }) {
   const { data } = useQuery({
     queryKey: ["progress-tracker"],
@@ -83,18 +88,76 @@ function WeightProgressChart({
     },
   })
 
-  const chartData =
-    data?.weightProgress?.map((p) => ({
-      date: new Date(p.createdAt).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-      }),
-      currentWeight: parseWeight(p.currentWeight),
-      targetWeight: parseWeight(p.targetWeight),
-    })) ?? []
+  const chartData = React.useMemo(() => {
+    if (!data?.weightProgress) return []
+
+    // Map raw points to include Date and day key
+    const mapped = data.weightProgress.map((p) => {
+      const createdAtDate = new Date(p.createdAt)
+      const dayKey = createdAtDate.toISOString().slice(0, 10) // YYYY-MM-DD
+      return {
+        dayKey,
+        createdAt: createdAtDate,
+        date: createdAtDate.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+        }),
+        currentWeight: parseWeight(p.currentWeight),
+        targetWeight: parseWeight(p.targetWeight),
+      }
+    })
+
+    // For each calendar day, keep only the latest point
+    const byDay = new Map<string, (typeof mapped)[number]>()
+    for (const point of mapped) {
+      const existing = byDay.get(point.dayKey)
+      if (!existing || point.createdAt > existing.createdAt) {
+        byDay.set(point.dayKey, point)
+      }
+    }
+
+    // Return in chronological order
+    return Array.from(byDay.values()).sort(
+      (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+    )
+  }, [data])
+
+  const filteredData = React.useMemo(() => {
+    if (range === "all" || chartData.length === 0) return chartData
+
+    // Anchor ranges to the latest available data point, not "now",
+    // so filters behave consistently with historical data.
+    const latest = chartData.reduce((max, p) => {
+      const currentMax = max ?? p.createdAt
+      return p.createdAt > currentMax ? p.createdAt : currentMax
+    }, chartData[0]?.createdAt ?? null)
+
+    if (!latest) return chartData
+
+    const start = new Date(latest)
+
+    switch (range) {
+      case "7d":
+        start.setDate(start.getDate() - 7)
+        break
+      case "1m":
+        start.setMonth(start.getMonth() - 1)
+        break
+      case "6m":
+        start.setMonth(start.getMonth() - 6)
+        break
+      case "1y":
+        start.setFullYear(start.getFullYear() - 1)
+        break
+      default:
+        return chartData
+    }
+
+    return chartData.filter((p) => p.createdAt >= start)
+  }, [chartData, range])
 
   return (
-    <Card>
+    <Card className="shadow-lg bg-[#f3fbfe] dark:bg-card">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
@@ -103,7 +166,7 @@ function WeightProgressChart({
         <ChartContainer config={chartConfig}>
           <LineChart
             accessibilityLayer
-            data={chartData}
+            data={filteredData}
             margin={{
               top: 20,
               left: 12,
@@ -156,22 +219,24 @@ function WeightProgressChart({
   )
 }
 
-export function CurrentWeightProgressChart() {
+export function CurrentWeightProgressChart({ range }: { range: FilterRange }) {
   return (
     <WeightProgressChart
       seriesKey="currentWeight"
       title="Current Weight Progress"
       description="Current weight over time"
+      range={range}
     />
   )
 }
 
-export function TargetWeightProgressChart() {
+export function TargetWeightProgressChart({ range }: { range: FilterRange }) {
   return (
     <WeightProgressChart
       seriesKey="targetWeight"
       title="Target Weight Progress"
       description="Target weight over time"
+      range={range}
     />
   )
 }
