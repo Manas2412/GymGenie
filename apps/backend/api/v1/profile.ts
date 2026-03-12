@@ -169,15 +169,25 @@ userProfileRouter.patch("/update-profile", authMiddleware, async (req, res) => {
                             where: { personalInfoId: existingPi.personalInfoId },
                             orderBy: { createdAt: "desc" },
                         });
-                        const nextCurrent =
+                        const incomingCurrent =
                             body.currentWeight !== undefined
                                 ? String(body.currentWeight)
-                                : latest?.currentWeight;
-                        const nextTarget =
+                                : undefined;
+                        const incomingTarget =
                             body.goalWeight !== undefined
                                 ? String(body.goalWeight)
-                                : latest?.targetWeight;
-                        if (nextCurrent && nextTarget) {
+                                : undefined;
+
+                        const nextCurrent = incomingCurrent ?? latest?.currentWeight;
+                        const nextTarget = incomingTarget ?? latest?.targetWeight;
+
+                        const didChange =
+                            (incomingCurrent !== undefined &&
+                                incomingCurrent !== latest?.currentWeight) ||
+                            (incomingTarget !== undefined &&
+                                incomingTarget !== latest?.targetWeight);
+
+                        if (didChange && nextCurrent && nextTarget) {
                             await tx.weightProgress.create({
                                 data: {
                                     personalInfoId: existingPi.personalInfoId,
@@ -206,6 +216,7 @@ userProfileRouter.patch("/update-profile", authMiddleware, async (req, res) => {
                             body.currentWeight !== undefined ? String(body.currentWeight) : undefined;
                         const nextTarget =
                             body.goalWeight !== undefined ? String(body.goalWeight) : undefined;
+                        // Only create if frontend actually sent weights
                         if (nextCurrent && nextTarget) {
                             await tx.weightProgress.create({
                                 data: {

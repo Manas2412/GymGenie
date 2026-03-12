@@ -1,11 +1,11 @@
 import React from 'react'
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components/NavBar/app-sidebar"
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { ModeToggle } from "@/components/mode-toggle"
+import { ModeToggle } from "@/components/NavBar/mode-toggle"
 
 export default function Sidebar({ children }: { children: React.ReactNode }) {
   return (

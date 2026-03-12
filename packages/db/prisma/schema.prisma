@@ -56,13 +56,11 @@ model WeightProgress {
   currentWeight  String
   targetWeight   String
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
   personalInfoId String
   personalInfo   PersonalInfo @relation(fields: [personalInfoId], references: [personalInfoId])
 
   @@index([personalInfoId], name: "weight_progress_personal_info_id_idx")
   @@index([createdAt], name: "weight_progress_created_at_idx")
-  @@index([updatedAt], name: "weight_progress_updated_at_idx")
 }
 
 model Machines {
@@ -251,6 +249,7 @@ enum BodyGoals {
 }
 
 enum ActivityLevel {
+  Newbie
   Beginner
   Intermediate
   Advanced

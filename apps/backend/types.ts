@@ -28,7 +28,7 @@ const BaseProfileFields = z.object({
   birthDate: z.coerce.date().optional(),
   goalWeight: z.coerce.number().optional(),
   targetDuration: z.string(),
-  activityLevel: z.enum(["Beginner", "Intermediate", "Advanced", "Expert"]).optional(),
+  activityLevel: z.enum(["Newbie", "Beginner", "Intermediate", "Advanced", "Expert"]).optional(),
   bodyGoals: z.enum([
     "WEIGHT_LOSS",
     "WEIGHT_GAIN",

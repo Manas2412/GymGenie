@@ -1,7 +1,5 @@
 import { Router } from "express";
 import { prisma } from "db/index";
-import bcrypt from "bcrypt";
-import { UpdateProfile } from "../../types";
 import authMiddleware from "./middleware";
 
 const dashboardRouter = Router();
@@ -20,13 +18,12 @@ dashboardRouter.get("/progress-tracker", authMiddleware, async (req, res) => {
                 personalInfo: {
                     select: {
                         weightProgress: {
-                            orderBy: { createdAt: "desc" },
-                            take: 1,
+                            orderBy: { createdAt: "asc" },
+                            take: 90,
                             select: {
                                 currentWeight: true,
                                 targetWeight: true,
                                 createdAt: true,
-                                updatedAt: true
                             },
                         },
                     }
@@ -42,7 +39,8 @@ dashboardRouter.get("/progress-tracker", authMiddleware, async (req, res) => {
             personalInfo: typeof user.personalInfo;
         };
 
-        const latestProgress = withRelations.personalInfo?.weightProgress?.[0];
+        const progress = withRelations.personalInfo?.weightProgress ?? [];
+        const latestProgress = progress.length ? progress[progress.length - 1] : undefined;
 
         // Never expose password hash in profile response
         res.status(200).json({
@@ -54,6 +52,7 @@ dashboardRouter.get("/progress-tracker", authMiddleware, async (req, res) => {
                     goalWeight: latestProgress?.targetWeight ?? null,
                 }
                 : null,
+            weightProgress: progress,
             success: true,
         });
     } catch (err) {

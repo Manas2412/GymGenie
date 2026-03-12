@@ -1,11 +1,17 @@
-import { ProgressChart } from '@/components/dashboard/progress_tracker';
+import {
+  CurrentWeightProgressChart,
+  TargetWeightProgressChart,
+} from "@/components/dashboard/progress_tracker"
 import React from 'react'
 
 const Dashboard = () => {
   return (
     <div>
       <h1>Progress Tracker</h1>
-      <ProgressChart/>
+      <div className="grid gap-4 md:grid-cols-2">
+        <CurrentWeightProgressChart />
+        <TargetWeightProgressChart />
+      </div>
     </div>
   )
 }

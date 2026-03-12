@@ -1,6 +1,6 @@
 "use client"
 
-import Sidebar from '@/components/side-bar'
+import Sidebar from '@/components/NavBar/side-bar'
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'

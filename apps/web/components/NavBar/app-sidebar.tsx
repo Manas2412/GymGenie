@@ -8,8 +8,8 @@ import {
   SquareTerminal,
 } from "lucide-react"
 
-import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
+import { NavMain } from "@/components/NavBar/nav-main"
+import { NavUser } from "@/components/NavBar/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import { useQuery } from "@tanstack/react-query"
 import axios from "axios"
