@@ -1,0 +1,68 @@
+[
+{"name":"Barbell","category":"Free Weights","description":"A long steel rod used with weight plates for compound exercises like squats, deadlifts, and bench press."},
+{"name":"EZ Curl Bar","category":"Free Weights","description":"A curved bar designed to reduce wrist strain during bicep curls and tricep extensions."},
+{"name":"Dumbbells","category":"Free Weights","description":"Handheld weights used for exercises such as curls, presses, lunges, and rows."},
+{"name":"Bumper Plates","category":"Free Weights","description":"Rubber-coated plates designed for Olympic lifts where the bar may be dropped."},
+{"name":"Medicine Ball","category":"Free Weights","description":"A weighted ball used for core exercises, throws, and explosive training."},
+
+{"name":"Flat Bench","category":"Benches","description":"A flat padded bench used for exercises like bench press, dumbbell press, and step-ups."},
+{"name":"Adjustable Bench","category":"Benches","description":"A bench adjustable to incline, flat, or decline positions for various strength exercises."},
+{"name":"Incline Bench","category":"Benches","description":"A bench angled upward mainly used for upper chest and shoulder exercises."},
+{"name":"Decline Bench","category":"Benches","description":"A downward angled bench used for lower chest workouts and decline sit-ups."},
+
+{"name":"Squat Rack","category":"Racks","description":"A rack used to hold barbells at shoulder height for squats and similar exercises."},
+{"name":"Deadlift Platform","category":"Racks","description":"A reinforced platform designed for safe deadlifting and Olympic lifting."},
+{"name":"Smith Machine","category":"Racks","description":"A barbell fixed on vertical rails allowing controlled lifting movements."},
+{"name":"Functional Trainer","category":"Racks","description":"A cable-based machine with adjustable pulleys for full-body functional workouts."},
+{"name":"Cable Crossover Machine","category":"Racks","description":"A dual cable machine mainly used for chest fly and upper body exercises."},
+
+{"name":"Chest Press Machine","category":"Strength Machine","description":"A machine that simulates the bench press to strengthen chest muscles."},
+{"name":"Incline Chest Press Machine","category":"Strength Machine","description":"A pressing machine angled to target the upper chest."},
+{"name":"Decline Chest Press Machine","category":"Strength Machine","description":"A machine designed to train the lower portion of the chest."},
+{"name":"Pec Deck Machine","category":"Strength Machine","description":"A machine used for chest fly exercises that isolate the chest muscles."},
+{"name":"Rear Delt Machine","category":"Strength Machine","description":"A machine used to train the rear shoulder and upper back muscles."},
+{"name":"Shoulder Press Machine","category":"Strength Machine","description":"A seated machine used for overhead pressing to strengthen shoulders."},
+{"name":"Lat Pulldown Machine","category":"Strength Machine","description":"A machine where a bar is pulled downward to strengthen the back and lat muscles."},
+{"name":"Seated Row Machine","category":"Strength Machine","description":"A machine used for rowing movements that target the middle back."},
+
+{"name":"Leg Press Machine","category":"Lower Body Machine","description":"A machine where users push a weighted platform using their legs to train quads and glutes."},
+{"name":"Leg Extension Machine","category":"Lower Body Machine","description":"A machine used to isolate and strengthen the quadriceps."},
+{"name":"Seated Leg Curl Machine","category":"Lower Body Machine","description":"A machine used to strengthen hamstrings by curling the legs while seated."},
+{"name":"Seated Calf Raise Machine","category":"Lower Body Machine","description":"A seated machine designed to isolate calf muscles."},
+
+{"name":"T-Bar Row Machine","category":"Plate Loaded Machine","description":"A plate-loaded machine used for rowing movements to strengthen the back."},
+
+{"name":"Dual Adjustable Pulley","category":"Cable Equipment","description":"A cable machine with two adjustable pulleys for versatile exercises."},
+{"name":"Low Row Cable","category":"Cable Equipment","description":"A cable station used for seated row movements."},
+{"name":"Rope Attachment","category":"Cable Equipment","description":"A rope handle attachment used for triceps pushdowns and other cable exercises."},
+{"name":"Straight Bar Attachment","category":"Cable Equipment","description":"A straight bar used with cable machines for curls and pushdowns."},
+{"name":"V-Bar Attachment","category":"Cable Equipment","description":"A V-shaped bar used for close-grip cable exercises."},
+{"name":"Ankle Strap","category":"Cable Equipment","description":"A strap attached to the ankle for cable leg exercises like kickbacks."},
+
+{"name":"Treadmill","category":"Cardio Machine","description":"A machine used for walking, jogging, and running indoors."},
+{"name":"Incline Treadmill","category":"Cardio Machine","description":"A treadmill with adjustable incline to simulate uphill walking or running."},
+{"name":"Cross Trainer","category":"Cardio Machine","description":"A cardio machine similar to an elliptical that trains both arms and legs."},
+{"name":"Spin Bike","category":"Cardio Machine","description":"A heavy-duty bike designed for high-intensity indoor cycling."},
+{"name":"Rowing Machine","category":"Cardio Machine","description":"A machine that simulates rowing and provides a full-body workout."},
+
+{"name":"Pull-up Bar","category":"Bodyweight Equipment","description":"A horizontal bar used for pull-ups and chin-ups."},
+{"name":"Dip Bars","category":"Bodyweight Equipment","description":"Parallel bars used for performing dips."},
+{"name":"Parallel Bars","category":"Bodyweight Equipment","description":"Bars used for gymnastics-style bodyweight exercises."},
+{"name":"Push-up Bars","category":"Bodyweight Equipment","description":"Handles used to perform push-ups with improved wrist alignment."},
+
+{"name":"Battle Ropes","category":"Functional Training","description":"Heavy ropes used for high-intensity conditioning workouts."},
+{"name":"Resistance Bands","category":"Functional Training","description":"Elastic bands used for strength training and mobility work."},
+{"name":"Jump Box","category":"Functional Training","description":"A platform used for plyometric jump exercises."},
+{"name":"Sled Push","category":"Functional Training","description":"A sled used for pushing exercises to build strength and conditioning."},
+{"name":"Weighted Sled","category":"Functional Training","description":"A sled loaded with weights used for pushing or pulling workouts."},
+
+{"name":"Hyperextension Bench","category":"Core Equipment","description":"A bench designed for lower back and glute strengthening exercises."},
+{"name":"Decline Ab Bench","category":"Core Equipment","description":"A decline bench used for advanced abdominal exercises."},
+{"name":"Captain's Chair","category":"Core Equipment","description":"A station used for leg raises and core exercises."},
+{"name":"Ab Roller","category":"Core Equipment","description":"A wheel device used for intense abdominal rollout exercises."},
+{"name":"Stability Ball","category":"Core Equipment","description":"A large inflatable ball used for balance and core training."},
+
+{"name":"Reverse Hyper Machine","category":"Specialty Equipment","description":"A machine used to strengthen lower back and glutes."},
+
+{"name":"Foam Roller","category":"Recovery Equipment","description":"A cylindrical tool used for muscle recovery and reducing soreness."}
+]

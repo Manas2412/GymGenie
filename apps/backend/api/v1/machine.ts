@@ -5,6 +5,7 @@ import { UpdateMachineInput } from "../../types";
 
 const machineRouter = Router();
 
+
 machineRouter.get("/get-machines", authMiddleware, async (req, res) => {
     const userId = req.userId;
     if (!userId) {
@@ -25,6 +26,37 @@ machineRouter.get("/get-machines", authMiddleware, async (req, res) => {
         console.error(err);
         return res.status(500).json({
             message: "Internal Server Error in fetching machines",
+            success: false,
+        });
+    }
+});
+
+machineRouter.post("/create-machines-profile", authMiddleware, async (req, res) => {
+    const userId = req.userId;
+    if (!userId) {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+    }
+
+    const machinesData = require("../../generalMachines.json");
+    const machinesWithUserId = machinesData.map((machine: any) => ({
+        ...machine,
+        userId,
+    }));
+
+    try {
+        const createdMachines = await prisma.machines.createMany({
+            data: machinesWithUserId,
+        });
+
+        return res.status(200).json({
+            createdMachines,
+            success: true,
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({
+            message: "Internal Server Error in creating machines profile",
             success: false,
         });
     }
@@ -55,7 +87,7 @@ machineRouter.patch("/update-machine/:machineId", authMiddleware, async (req, re
                 success: false,
             });
         }
-        const { name } = parsed.data;
+        const { name, category } = parsed.data;
 
         const existing = await prisma.machines.findFirst({
             where: { machineId, userId },
@@ -69,7 +101,7 @@ machineRouter.patch("/update-machine/:machineId", authMiddleware, async (req, re
 
         const updated = await prisma.machines.update({
             where: { machineId },
-            data: { name },
+            data: { name, category },
         });
 
         return res.status(200).json({

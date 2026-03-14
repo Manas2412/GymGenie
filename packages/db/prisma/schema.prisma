@@ -64,12 +64,15 @@ model WeightProgress {
 }
 
 model Machines {
-  machineId String @id @default(uuid())
-  name      String
-  userId    String
-  user      User   @relation(fields: [userId], references: [userId])
+  machineId   String @id @default(uuid())
+  name        String
+  category    String
+  description String
+  userId      String
+  user        User   @relation(fields: [userId], references: [userId])
 
   @@index([userId], name: "machines_user_id_idx")
+  @@index([category], name: "machines_category_idx")
 }
 
 model Workout {

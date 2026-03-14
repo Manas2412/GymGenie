@@ -72,7 +72,8 @@ export const UpdateWorkoutInput = z.object({
 });
 
 export const UpdateMachineInput = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).optional(),
+  category: z.string().min(1).optional(),
 });
 
 export const PostSignUp = BaseProfileFields;

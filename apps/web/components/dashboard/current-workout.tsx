@@ -38,7 +38,7 @@ const CurrentWorkoutPlan = () => {
       const token = localStorage.getItem("token")
       if (!token) return null
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/workout/get-workouts`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/workout/current-workouts`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

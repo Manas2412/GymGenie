@@ -62,6 +62,54 @@ workoutRouter.get("/get-workouts", authMiddleware, async (req, res) => {
     }
 });
 
+workoutRouter.get("/current-workouts", authMiddleware, async (req, res) => {
+    const userId = req.userId;
+    if (!userId) {
+        res.status(401).json({ message: "unauthorized" });
+        return;
+    }
+
+    try {
+        const currentWorkout = await prisma.workout.findFirst({
+            where: { userId },
+            orderBy: { createdAt: "desc" },
+            include: {
+                chest: true,
+                shoulders: true,
+                back: true,
+                arms: {
+                    include: {
+                        biceps: true,
+                        triceps: true,
+                        forearms: true
+                    }
+                },
+                legs: {
+                    include: {
+                        quads: true,
+                        hamstrings: true,
+                        calves: true
+                    }
+                },
+                core: true,
+                cardio: true,
+            },
+        });
+
+        return res.status(200).json({
+            userWorkouts: currentWorkout ? [currentWorkout] : [],
+            count: currentWorkout ? 1 : 0,
+            success: true,
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({
+            message: "Internal Server Error in fetching current workout",
+            success: false,
+        });
+    }
+});
+
 workoutRouter.delete("/delete-workout/:workoutId", authMiddleware, async (req, res) => {
     const userId = req.userId;
     if (!userId) {

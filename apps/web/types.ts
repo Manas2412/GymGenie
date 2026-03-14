@@ -152,3 +152,11 @@ export type GetWorkoutsResponse = {
   count: number;
   success?: boolean;
 };
+
+// Machines API types (get-machines response)
+export type Machine = {
+  machineId: string;
+  name: string;
+  category: string;
+  description: string;
+};

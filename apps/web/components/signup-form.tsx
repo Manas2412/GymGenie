@@ -59,6 +59,20 @@ export function SignupForm({
             const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user/signup`, data, {
                 withCredentials: true
             })
+
+            if (response.data?.jwt) {
+                localStorage.setItem("token", response.data.jwt)
+            }
+
+            try {
+                await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/machines/create-machines-profile`, {}, {
+                    withCredentials: true,
+                    headers: response.data?.jwt ? { Authorization: `Bearer ${response.data.jwt}` } : {}
+                })
+            } catch (err) {
+                console.error("Failed to default machine profile", err)
+            }
+
             return response.data
         },
         onSuccess: () => {
