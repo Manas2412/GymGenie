@@ -43,20 +43,16 @@ const data = {
     },
     {
       title: "Workout",
-      url: "/dashboard/workout",
+      url: "/dashboard/all-workout",
       icon: Bot,
       items: [
         {
-          title: "Today's Workout",
-          url: "/dashboard/workout",
+          title: "All Workout",
+          url: "/dashboard/all-workout",
         },
         {
           title: "Generate Workout",
-          url: "/dashboard/workout",
-        },
-        {
-          title: "All Workout",
-          url: "/dashboard/workout",
+          url: "/dashboard/generate-workout",
         },
       ],
     },

@@ -1,20 +1,24 @@
-'use client'
-import React from "react"
+"use client";
+import Link from "next/link";
+import React from "react";
+import { Plus } from "lucide-react";
 import {
   CurrentWeightProgressChart,
   TargetWeightProgressChart,
   type FilterRange,
-} from "@/components/dashboard/progress_tracker"
+} from "@/components/dashboard/progress_tracker";
+import CurrentWorkoutPlan from "@/components/dashboard/current-workout";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
-  const [range, setRange] = React.useState<FilterRange>("all")
+  const [range, setRange] = React.useState<FilterRange>("all");
 
   return (
     <div className="space-y-4">
@@ -40,8 +44,21 @@ const Dashboard = () => {
         <CurrentWeightProgressChart range={range} />
         <TargetWeightProgressChart range={range} />
       </div>
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold pb-4">Current Workout Plan</h2>
+        <Button asChild>
+          <Link href="/dashboard/generate-workout">
+            <Plus className="mr-2 h-4 w-4" />
+            Generate Workout
+          </Link>
+        </Button>
+      </div>
+      <div>
+        <CurrentWorkoutPlan />
+      </div>
     </div>
-  )
-}
+  );
+};
 
 export default Dashboard;

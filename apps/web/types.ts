@@ -112,3 +112,43 @@ export type ProfileFormValues = {
   bodyGoals: BodyGoals | "";
   endDate?: string | Date | null;
 };
+
+// Workout API types (get-workouts response)
+export type Exercise = {
+  name: string;
+  reps: number;
+  sets: number;
+};
+
+export type ArmsExercise = Exercise & {
+  armsId: string;
+  biceps?: Exercise[];
+  triceps?: Exercise[];
+  forearms?: Exercise[];
+};
+
+export type LegsExercise = Exercise & {
+  legsId: string;
+  quads?: Exercise[];
+  hamstrings?: Exercise[];
+  calves?: Exercise[];
+};
+
+export type WorkoutEntry = {
+  workoutId: string;
+  createdAt: string;
+  userId: string;
+  chest: (Exercise & { chestId: string; workoutId: string })[];
+  shoulders: (Exercise & { shouldersId: string; workoutId: string })[];
+  back: (Exercise & { backId: string; workoutId: string })[];
+  arms: ArmsExercise[];
+  legs: LegsExercise[];
+  core: (Exercise & { coreId: string; workoutId: string })[];
+  cardio: (Exercise & { cardioId: string; workoutId: string })[];
+};
+
+export type GetWorkoutsResponse = {
+  userWorkouts: WorkoutEntry[];
+  count: number;
+  success?: boolean;
+};
